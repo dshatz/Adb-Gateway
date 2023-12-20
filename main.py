@@ -1,93 +1,118 @@
+import os
+import subprocess
 import sys
 import threading
 import queue
+from multiprocessing import Process
+from os import getenv
 from time import sleep
+from tkinter import END, messagebox
+from tkinter.ttk import Notebook
+from typing import List
 
 import paramiko
 from adbutils import AdbClient
 from paramiko import SSHClient
 from sshtunnel import SSHTunnelForwarder, open_tunnel
 
+from access import WorkerAccess
+from config import Config, ConfigCreated
 from rforward import reverse_forward_tunnel
 import tkinter as tk
 
-q = queue.Queue()
+from share import WorkerShare
 
-
-def worker():
-    adb = AdbClient(host="127.0.0.1", port=5037)
-    while True:
-        try:
-            for info in adb.list():
-                print(info.serial, info.state)
-            q.put("adbok")
-            try:
-                q.put("connected")
-                reverse_forward_tunnel(
-                    5037, "localhost", 5037, ssh()
-                )
-            except Exception as e:
-                q.put("ssherror:SSH tunnel error " + str(e))
-
-        except ConnectionRefusedError:
-            q.put("adbnotok")
-        sleep(1000)
-
-def ssh():
-    ssh: SSHClient = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    ssh.connect(
-        hostname='158.179.200.162',
-        port=2222,
-        username="headless",
-        password="Confero123!"
-    )
-    return ssh.get_transport()
-
-
-def worker2():
-    try:
-        q.put("connected2")
-        reverse_forward_tunnel(
-            27183, "localhost", 27183, ssh()
-        )
-    except Exception as e:
-        q.put("ssherror:SSH tunnel error(2) " + str(e))
 
 class App():
     def __init__(self, root):
-        self.adberror = tk.Label(text="No ADB daemon found", fg="#f00")
-        self.adbOk = tk.Label(text="ADB found")
-        self.ssherror = tk.Label(text="")
-        self.connected = tk.Label(text="Connected", fg="#008000")
-        self.connected2 = tk.Label(text="Connected (2)", fg="#008000")
+        try:
+            self.config = Config()
+        except ConfigCreated:
+            messagebox.showwarning("Config file created, please edit")
+
         self.root = root
+        self.tabs = Notebook(self.root)
+        self.tabShare = tk.Frame(self.tabs)
+        self.tabAccess = tk.Frame(self.tabs)
+        self.tabs.add(self.tabShare, text="Share device")
+        self.tabs.add(self.tabAccess, text="Access device")
+        self.tabs.pack(expand=1, fill="both")
+
+        self.logShare = tk.Text(self.tabShare)
+        self.logAccess = tk.Text(self.tabAccess)
+        self.launchScrcpy = tk.Button(self.tabAccess, command=self.scrcpy, text="scrcpy")
+        self.launchScrcpy.pack()
+        self.logShare.pack()
+        self.logAccess.pack()
+
+        self.workerShare = WorkerShare(self.config)
+        self.workerAccess = WorkerAccess(self.config)
+
+    def scrcpy(self):
+        os.system(
+            f"ANDROID_ADB_SERVER_PORT={self.config.access_adb_port} scrcpy"
+            f" --tunnel-port={self.config.access_scrcpy_port}"
+            f" -b 1M --max-fps=15 --max-size=1024"
+        )
+        # subprocess.Popen(
+        #     env={
+        #         "ANDROID_ADB_SERVER_PORT": self.config.access_adb_port
+        #     },
+        #     executable="scrcpy",
+        #     args=[f"--tunnel-port={self.config.access_scrcpy_port}",
+        #           "-b 1M",
+        #           "--max-fps=15",
+        #           "--max-size=1024"])
 
     def after_callback(self):
-        try:
-            message = q.get(block=False)
-        except queue.Empty:
-            # let's try again later
-            self.root.after(100, self.after_callback)
-            return
+        selected = self.tabs.index("current")
+        if selected == 0 and not self.workerShare.running:
+            # Share device selected.
+            self.workerShare = WorkerShare(self.config)
+            self.workerShare.start()
+            if self.workerAccess.running:
+                self.workerAccess.stop()
+            self.logAccess.delete("1.0", END)
+        elif selected == 1 and not self.workerAccess.running:
+            # Access device selected.
+            self.workerAccess = WorkerAccess(self.config)
+            self.workerAccess.start()
+            if self.workerShare.running:
+                self.workerShare.stop()
+            self.logShare.delete("1.0", END)
 
-        print('after_callback got', message)
-        if message is not None:
-            # we're not done yet, let's do something with the message and
-            # come back later
-            if message == "adbnotok":
-                self.adberror.pack()
-            if message == "adbok":
-                self.adbOk.pack()
-                self.adberror.destroy()
-            if message.startswith("ssherror:"):
-                self.ssherror = tk.Label(text=message[9:], fg="#f00")
-                self.ssherror.pack()
-            if message == "connected":
-                self.connected.pack()
-            if message == "connected2":
-                self.connected2.pack()
+        try:
+            if selected == 0 and self.workerShare.running:
+                message = self.workerShare.q.get(block=False)
+            elif selected == 1 and self.workerAccess.running:
+                message = self.workerAccess.q.get(block=False)
+            else:
+                message = ""
+            if message != "":
+                print(f"Message from page {selected}: {message}")
+                self.process_message(selected, message)
+        except queue.Empty:
+            pass
+        finally:
             self.root.after(100, self.after_callback)
+
+    def process_message(self, page, msg):
+        if page == 0:
+            self.logShare.insert(END, msg + "\n")
+            self.logShare.pack()
+        elif page == 1:
+            if msg == "show_scrcpy_button":
+
+                pass
+            else:
+                self.logAccess.insert(END, msg + "\n")
+                self.logShare.pack()
+
+    def stop(self):
+        if self.workerShare is not None:
+            self.workerShare.stop()
+        if self.workerAccess is not None:
+            self.workerAccess.stop()
 
 
 def main():
@@ -95,17 +120,11 @@ def main():
     window.title("ADB Gateway")
     window.geometry("400x300")
 
-    thread = threading.Thread(target=worker)
-    thread.start()
-
-    thread2 = threading.Thread(target=worker2)
-    thread2.start()
     app = App(window)
+
     window.after(100, app.after_callback)
     window.mainloop()
-
-
-
+    app.stop()
 
 
 if __name__ == "__main__":
