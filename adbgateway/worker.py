@@ -2,10 +2,9 @@ import queue
 from abc import ABC, abstractmethod
 from multiprocessing import Process, Queue
 from threading import Thread
-from time import sleep
 from typing import List
 
-from config import Config
+from adbgateway.config import Config
 
 
 class Worker(ABC):

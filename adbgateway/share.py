@@ -1,17 +1,14 @@
-import os
 import subprocess
 from abc import ABC
 from multiprocessing import Process
-from queue import Queue
 from time import sleep
 
 import adbutils
-from adbutils import adb_path, AdbConnection
+from adbutils import adb_path
 
-from config import Config
-from rforward import reverse_forward_tunnel
-from ssh import ssh
-from worker import Worker
+from adbgateway.rforward import reverse_forward_tunnel
+from adbgateway.ssh import ssh
+from adbgateway.worker import Worker
 
 
 def worker_share_adb(worker: Worker):

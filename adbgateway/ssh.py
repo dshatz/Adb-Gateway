@@ -1,7 +1,7 @@
 import paramiko
 from paramiko.client import SSHClient
 
-from config import Config
+from adbgateway.config import Config
 
 
 def ssh(config: Config):

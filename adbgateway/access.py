@@ -2,13 +2,10 @@ from abc import ABC
 from multiprocessing import Process
 from time import sleep
 
-import adbutils
 from sshtunnel import SSHTunnelForwarder
 
-from rforward import reverse_forward_tunnel
-from ssh import ssh
-from tools import kill_adb_server
-from worker import Worker
+from adbgateway.tools import kill_adb_server
+from adbgateway.worker import Worker
 
 
 def worker_access_adb(worker: Worker):

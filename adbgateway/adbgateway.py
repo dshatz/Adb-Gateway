@@ -1,29 +1,15 @@
 import os
-import subprocess
-import sys
-import threading
 import queue
-from multiprocessing import Process
-from os import getenv
-from time import sleep
+import tkinter as tk
 from tkinter import END, messagebox
 from tkinter.ttk import Notebook
-from typing import List
 
-import paramiko
-from adbutils import AdbClient
-from paramiko import SSHClient
-from sshtunnel import SSHTunnelForwarder, open_tunnel
-
-from access import WorkerAccess
-from config import Config, ConfigCreated
-from rforward import reverse_forward_tunnel
-import tkinter as tk
-
-from share import WorkerShare
+from adbgateway.access import WorkerAccess
+from adbgateway.share import WorkerShare
+from adbgateway.config import Config, ConfigCreated
 
 
-class App():
+class App:
     def __init__(self, root):
         try:
             self.config = Config()
