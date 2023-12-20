@@ -28,7 +28,7 @@ jobs:
         pip install pyinstaller
     - name: Build
       run: pyinstaller adbgateway.spec
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v3
       with:
         name: name-of-artifact
-        path: adbgateway/dist/adbgateway
+        path: dist/adbgateway
