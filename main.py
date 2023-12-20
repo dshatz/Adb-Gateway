@@ -27,8 +27,9 @@ class App():
     def __init__(self, root):
         try:
             self.config = Config()
-        except ConfigCreated:
-            messagebox.showwarning("Config file created, please edit")
+        except ConfigCreated as e:
+            messagebox.showwarning(title="Error", message="Config file created, please edit adbgateway.cfg")
+            raise e
 
         self.root = root
         self.tabs = Notebook(self.root)
