@@ -27,7 +27,7 @@ jobs:
         pip install -r adbgateway/requirements.txt
         pip install pyinstaller
     - name: Build
-      run: pyinstaller adbgateway/adbgateway.spec
+      run: pyinstaller adbgateway.spec
     - uses: actions/upload-artifact@v2
       with:
         name: name-of-artifact
