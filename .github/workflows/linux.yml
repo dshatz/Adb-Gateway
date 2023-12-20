@@ -19,7 +19,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Create Linux executable
-      uses: JackMcKew/pyinstaller-action-linux@0.1.4
+      uses: JackMcKew/pyinstaller-action-linux@python3.10
       with:
         path: adbgateway
     - uses: actions/upload-artifact@v2
