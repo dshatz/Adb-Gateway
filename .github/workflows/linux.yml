@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-linux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -30,5 +30,7 @@ jobs:
       run: pyinstaller adbgateway.spec
     - uses: actions/upload-artifact@v3
       with:
-        name: linux-${{ github.ref }}
+        name: linux-$(git rev-parse --short "$GITHUB_SHA")
         path: dist/adbgateway
+  build-windows:
+   runs-on: windows-latest
