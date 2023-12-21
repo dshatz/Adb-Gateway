@@ -32,5 +32,3 @@ jobs:
       with:
         name: linux-$(git rev-parse --short "$GITHUB_SHA")
         path: dist/adbgateway
-  build-windows:
-   runs-on: windows-latest
