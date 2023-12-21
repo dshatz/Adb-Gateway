@@ -28,7 +28,7 @@ jobs:
         pip install pyinstaller
     - name: Build
       run: pyinstaller adbgateway.spec
-    - name: Release
-      uses: softprops/action-gh-release@v1
+    - uses: actions/upload-artifact@v3
       with:
-        files: dist/adbgateway
+        name: linux-${{ github.ref }}
+        path: dist/adbgateway
