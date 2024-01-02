@@ -1,4 +1,4 @@
-# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# This workflow will install Python dependencies and build the release executables.
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
 name: Python application
@@ -6,8 +6,9 @@ name: Python application
 on:
   push:
     branches:
+      - main
+    tags:
       - release/*
-  pull_request:
 
 permissions:
   contents: write
@@ -15,6 +16,7 @@ permissions:
 jobs:
   get-version:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == 'true'
     steps:
     - uses: winterjung/split@v2
       id: split
