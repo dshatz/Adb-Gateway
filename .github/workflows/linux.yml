@@ -13,15 +13,34 @@ permissions:
   contents: write
 
 jobs:
-  build-linux:
+  get-version:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
     - uses: winterjung/split@v2
-        id: split
-        with:
-          msg: ${{ github.ref_name }}
-          separator: '/'
+      id: split
+      with:
+        msg: ${{ github.ref_name }}
+        separator: '/'
+    - name: Save version to file
+      run: echo ${{ steps.split.outputs._1 }} > version.txt
+    - uses: actions/upload-artifact@v3
+      with:
+        name: version.txt
+        path: version.txt
+  build-linux:
+    runs-on: ubuntu-latest
+    needs: get-version
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/download-artifact@v3
+      with:
+        merge-multiple: true
+    - name: Load version from file
+      id: version
+      shell: bash
+      run: |
+        content=`cat version.txt/version.txt`
+        echo "::set-output name=version::$content"
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
@@ -36,17 +55,22 @@ jobs:
       run: pyinstaller adbgateway.spec
     - uses: actions/upload-artifact@v3
       with:
-        name: linux-${{ steps.split.outputs._1 }}
+        name: linux-${{ steps.version.outputs.version }}
         path: dist/adbgateway
   build-windows:
+    needs: get-version
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v3
-    - uses: winterjung/split@v2
-        id: split
-        with:
-          msg: ${{ github.ref_name }}
-          separator: '/'
+    - uses: actions/download-artifact@v3
+      with:
+        merge-multiple: true
+    - name: Load version from file
+      id: version
+      shell: bash
+      run: |
+        content=`cat version.txt/version.txt`
+        echo "::set-output name=version::$content"
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
@@ -56,35 +80,38 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install -r adbgateway/requirements.txt
-        pip install pyinstaller
+        pip install pyinstaller pyinstaller-versionfile
+    - name: Generate version file
+      run: create-version-file metadata.yaml --outfile file_info.txt --version ${{ steps.version.outputs.version }}
     - name: Build
-      env:
-        EXE_VERSION: ${{ steps.split.outputs._1 }}
       run: pyinstaller adbgateway.spec
     - uses: actions/upload-artifact@v3
       with:
-        name: windows-${{ steps.split.outputs._1 }}.exe
+        name: windows-${{ steps.version.outputs.version }}.exe
         path: dist/adbgateway.exe
   release:
     runs-on: ubuntu-latest
     needs: [build-linux, build-windows]
     steps:
-    - uses: winterjung/split@v2
-        id: split
-        with:
-          msg: ${{ github.ref_name }}
-          separator: '/'
     - uses: actions/download-artifact@v3
       with:
         path: artifacts
         merge-multiple: true
+    - name: Load version from file
+      id: version
+      shell: bash
+      run: |
+        content=`cat artifacts/version.txt/version.txt`
+        echo "::set-output name=version::$content"
+    - name: Display structure of downloaded files
+      run: ls -R artifacts
     - name: Release
       uses: softprops/action-gh-release@v1
       with:
         fail_on_unmatched_files: true
-        tag_name: ${{ steps.split.outputs._1 }}
-        name: ${{ steps.split.outputs._1 }}
+        tag_name: ${{ steps.version.outputs.version }}
+        name: ${{ steps.version.outputs.version }}
         files: |
-          artifacts/linux-${{ steps.split.outputs._1 }}
-          artifacts/windows-${{ steps.split.outputs._1 }}.exe
+          artifacts/linux-${{ steps.version.outputs.version }}/adbgateway
+          artifacts/windows-${{ steps.version.outputs.version }}.exe/adbgateway.exe
 
