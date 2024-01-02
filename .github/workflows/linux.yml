@@ -112,6 +112,6 @@ jobs:
         tag_name: ${{ steps.version.outputs.version }}
         name: ${{ steps.version.outputs.version }}
         files: |
-          artifacts/linux-${{ steps.version.outputs.version }}/linux-${{ steps.version.outputs.version }}
-          artifacts/windows-${{ steps.version.outputs.version }}.exe/windows-${{ steps.version.outputs.version }}.exe
+          artifacts/linux-${{ steps.version.outputs.version }}/adbgateway
+          artifacts/windows-${{ steps.version.outputs.version }}.exe/adbgateway.exe
 
