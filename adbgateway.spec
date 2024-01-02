@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-
+import os
 
 a = Analysis(
     ['adbgateway/adbgateway.py'],
@@ -26,6 +26,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
+    version=os.environ['EXE_VERSION'],
     upx_exclude=[],
     runtime_tmpdir=None,
     console=True,
