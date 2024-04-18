@@ -42,15 +42,6 @@ class App:
             f" --tunnel-port={self.config.access_scrcpy_port}"
             f" -b 1M --max-fps=15 --max-size=1024"
         )
-        # subprocess.Popen(
-        #     env={
-        #         "ANDROID_ADB_SERVER_PORT": self.config.access_adb_port
-        #     },
-        #     executable="scrcpy",
-        #     args=[f"--tunnel-port={self.config.access_scrcpy_port}",
-        #           "-b 1M",
-        #           "--max-fps=15",
-        #           "--max-size=1024"])
 
     def after_callback(self):
         selected = self.tabs.index("current")
