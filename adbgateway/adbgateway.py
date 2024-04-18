@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import queue
 import tkinter as tk
@@ -115,4 +116,5 @@ def main():
 
 
 if __name__ == "__main__":
+    multiprocessing.freeze_support()
     main()
