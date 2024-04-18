@@ -16,6 +16,12 @@ class Worker(ABC):
         self.thread = Thread(target=self.runner)
         self.q = Queue()
 
+    def __getstate__(self):
+        return (self.config, self.q)
+
+    def __setstate__(self, state):
+        (self.config, self.q) = state
+
     def runner(self):
         for proc in self.processes:
             proc.start()
