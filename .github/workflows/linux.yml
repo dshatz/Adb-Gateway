@@ -4,8 +4,10 @@
 name: Python application
 
 on:
-  pull_request:
+  push:
     branches:
+      - master
+    tags:
       - release/**
 
 permissions:
