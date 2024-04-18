@@ -16,7 +16,6 @@ permissions:
 jobs:
   get-version:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == 'true'
     steps:
     - uses: winterjung/split@v2
       id: split
